@@ -1,10 +1,34 @@
 import { useRouter, type Href } from "expo-router";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
+
+const MARKET_LOGOS: Record<string, string> = {
+  polymarket: "https://placehold.co/56x56/101828/FFFFFF?text=PM",
+  predictit: "https://placehold.co/56x56/0f172a/FFFFFF?text=PI",
+  kalshi: "https://placehold.co/56x56/1e293b/FFFFFF?text=KA",
+  default: "https://placehold.co/56x56/111111/FFFFFF?text=EX",
+};
+
+const MARKET_LABELS: Record<string, string> = {
+  polymarket: "Polymarket",
+  predictit: "PredictIt",
+  kalshi: "Kalshi",
+};
 
 export default function HomeScreen() {
   const router = useRouter();
+
+  // TODO: Replace with feed-driven market details once available
+  const market = {
+    source: "polymarket",
+    headline: "When will the Government Shutdown end?",
+    prices: { yes: 0.8, no: 99.3 },
+  };
+
+  const marketLogoUri = MARKET_LOGOS[market.source] ?? MARKET_LOGOS.default;
+  const marketSourceLabel = MARKET_LABELS[market.source] ?? "Exact Market";
+  const formatPrice = (value: number) => `${value.toFixed(1)}¢`;
 
   return (
     <View style={styles.container}>
@@ -13,41 +37,21 @@ export default function HomeScreen() {
 
       {/* Top overlay bar */}
       <SafeAreaView style={styles.topBar}>
-        {/* LIVE badge */}
-        <Pressable onPress={() => router.push("/live" as Href)} style={styles.livePill}>
-          <Text style={styles.liveDot}>●</Text>
-          <Text style={styles.liveText}>LIVE</Text>
-        </Pressable>
-
+        <View style={styles.topBarSpacer} />
         {/* Center navigation tabs */}
         <View style={styles.centerTabs}>
-          {/* STEM tab (active) */}
-          <Pressable onPress={() => router.push("/post" as Href)}><Text style={styles.topTabActive}>STEM</Text></Pressable>
-          {/* Explore tab */}
-          <Pressable onPress={() => router.push("/post" as Href)}><Text style={styles.topTabDim}>Explore</Text></Pressable>
+          {/* Markets tab */}
+          <Pressable onPress={() => router.push("/post" as Href)}><Text style={styles.topTabActive}>Markets</Text></Pressable>
           {/* Following tab */}
           <Pressable onPress={() => router.push("/post" as Href)}><Text style={styles.topTabDim}>Following</Text></Pressable>
-          {/* For You tab */}
-          <Pressable onPress={() => router.push("/post" as Href)}><Text style={styles.topTabDim}>For You</Text></Pressable>
+          {/* Your Bets tab */}
+          <Pressable onPress={() => router.push("/post" as Href)}><Text style={styles.topTabDim}>Your Bets</Text></Pressable>
         </View>
-
         {/* Search icon button */}
         <Pressable onPress={() => router.push("/search" as Href)} style={styles.searchBtn}>
           <Ionicons name="search" size={20} color="#fff" />
         </Pressable>
       </SafeAreaView>
-      {/* Central play button (decorative) */}
-      <Pressable onPress={() => router.push("/post" as Href)} style={styles.playBtn}>
-        <MaterialIcons name="play-arrow" size={56} color="rgba(255,255,255,0.9)" />
-      </Pressable>
-
-      {/* Caption overlay */}
-      <View style={styles.captionWrap}>
-        {/* Caption text */}
-        <Text style={styles.captionText}>
-          POV: when you catch your married boss flirting with another woman that’s not his wife
-        </Text>
-      </View>
 
       {/* Right action rail */}
       <View style={styles.rightRail}>
@@ -56,7 +60,6 @@ export default function HomeScreen() {
           <View style={styles.avatar} />
           <View style={styles.plusBadge}><Text style={styles.plus}>＋</Text></View>
         </Pressable>
-
         {/* Like button */}
         <Pressable onPress={() => router.push("/post" as Href)} style={styles.railBtn}>
           <Ionicons name="heart" size={28} color="#fff" />
@@ -79,25 +82,26 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
+      {/* Caption overlay */}
+      <View style={styles.captionWrap}>
+        <View style={styles.captionHeader}>
+          <Image source={{ uri: marketLogoUri }} style={styles.marketLogo} />
+          <Text style={styles.marketSource}>{marketSourceLabel}</Text>
+        </View>
+      </View>
+
+
       {/* Bottom overlay area */}
       <View style={styles.bottomArea}>
-        {/* User handle */}
-        <Text style={styles.handle}>charrrly.k</Text>
-        {/* Description text */}
-        <Text style={styles.desc} numberOfLines={1}>
-          😂 I’m telling my work bestie first @Tyems #fyp #explorepage #viral
-        </Text>
-
-        {/* Music row */}
-        <Pressable onPress={() => router.push("/music" as Href)} style={styles.musicRow}>
-          <Ionicons name="musical-notes" size={14} color="#fff" />
-          <Text style={styles.musicText} numberOfLines={1}>Contains: BODY (danz) – …</Text>
-        </Pressable>
-
-        {/* Progress scrubber */}
-        <View style={styles.scrubberWrap}>
-          <View style={styles.scrubber} />
-          <View style={styles.scrubberThumb} />
+        <Text style={styles.headlineText}>{market.headline}</Text>
+        {/* Yes/No price row */}
+        <View style={styles.yesNoRow}>
+          <View style={styles.yesBox}>
+            <Text style={styles.yesText}>Yes <Text style={styles.priceText}>{formatPrice(market.prices.yes)}</Text></Text>
+          </View>
+          <View style={styles.noBox}>
+            <Text style={styles.noText}>No <Text style={styles.priceText}>{formatPrice(market.prices.no)}</Text></Text>
+          </View>
         </View>
       </View>
     </View>
@@ -110,21 +114,24 @@ const styles = StyleSheet.create({
 
   topBar: { position: "absolute", top: 0, left: 0, right: 0, paddingTop: 6, paddingHorizontal: 16,
     flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  leftTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-  livePill: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(0,0,0,0.4)",
-    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
-  liveDot: { color: "#ff3b30", fontWeight: "900" },
-  liveText: { color: "#fff", fontWeight: "700", letterSpacing: 0.5 },
+  topBarSpacer: { width: 40 },
   topTabDim: { color: "#bbb", fontWeight: "600" },
   topTabActive: { color: "#fff", fontWeight: "800" },
   searchBtn: { padding: 8 },
-  centerTabs: { flexDirection: "row", alignItems: "center", gap: 24 },
+  centerTabs: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 36,
+    paddingHorizontal: 16,
+    flex: 1,
+    justifyContent: "center",
+  },
 
-  playBtn: { position: "absolute", top: "42%", alignSelf: "center", opacity: 0.9 },
-
-  captionWrap: { position: "absolute", top: 120, left: 20, right: 100, backgroundColor: "rgba(0,0,0,0.35)",
-    borderRadius: 10, padding: 10 },
-  captionText: { color: "#fff", fontWeight: "800", fontSize: 16, lineHeight: 20 },
+  captionWrap: { position: "absolute", top: 110, left: 20, right: 120, backgroundColor: "rgba(0,0,0,0.4)",
+    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
+  captionHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
+  marketLogo: { width: 44, height: 44, borderRadius: 10 },
+  marketSource: { color: "#fff", fontWeight: "700", fontSize: 18 },
 
   rightRail: { position: "absolute", right: 10, top: 160, alignItems: "center", gap: 18 },
   avatarWrap: { alignItems: "center" },
@@ -135,13 +142,47 @@ const styles = StyleSheet.create({
   railBtn: { alignItems: "center" },
   railCount: { color: "#fff", marginTop: 4, fontSize: 12, fontWeight: "600" },
 
-  bottomArea: { position: "absolute", left: 12, right: 12, bottom: 70 },
-  handle: { color: "#fff", fontWeight: "700" },
-  desc: { color: "#fff", marginTop: 4 },
-  musicRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8 },
-  musicText: { color: "#fff", flexShrink: 1 },
+  bottomArea: { position: "absolute", left: 20, right: 20, bottom: 48, gap: 20 },
+  headlineText: { color: "#fff", fontWeight: "800", fontSize: 28, lineHeight: 34 },
 
-  scrubberWrap: { height: 18, marginTop: 8, justifyContent: "center" },
-  scrubber: { height: 3, backgroundColor: "rgba(255,255,255,0.5)", borderRadius: 2 },
-  scrubberThumb: { width: 14, height: 14, borderRadius: 7, backgroundColor: "#fff", position: "absolute", left: "40%" },
+  yesNoRow: {
+    flexDirection: "row",
+    gap: 20,
+    marginTop: 24,
+    marginBottom: 12,
+    justifyContent: "space-between",
+  },
+  yesBox: {
+    backgroundColor: "#22c55e",
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+  },
+  noBox: {
+    backgroundColor: "#dc2626",
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+  },
+  yesText: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 22,
+  },
+  noText: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 22,
+  },
+  priceText: {
+    fontWeight: "600",
+    fontSize: 18,
+    color: "rgba(255,255,255,0.9)",
+  },
 });
