@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, Pressable, FlatList, SafeAreaView } from "react-native";
+import { View, Text, StyleSheet, Pressable, FlatList } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, type Href } from "expo-router";
 
 const MOCK_COMMENTS = [

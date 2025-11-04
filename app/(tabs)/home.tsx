@@ -1,5 +1,6 @@
 import { useRouter, type Href } from "expo-router";
-import { View, Text, StyleSheet, Pressable, SafeAreaView } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 
 export default function HomeScreen() {
@@ -7,33 +8,42 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* White “video” placeholder */}
+      {/* Video placeholder background */}
       <View style={styles.videoPlaceholder} />
 
-      {/* Top overlay */}
+      {/* Top overlay bar */}
       <SafeAreaView style={styles.topBar}>
-        <View style={styles.leftTop}>
-          <Pressable onPress={() => router.push("/live" as Href)} style={styles.livePill}>
-            <Text style={styles.liveDot}>●</Text>
-            <Text style={styles.liveText}>LIVE</Text>
-          </Pressable>
-          <Pressable onPress={() => router.push("/post" as Href)}><Text style={styles.topTabDim}>STEM</Text></Pressable>
+        {/* LIVE badge */}
+        <Pressable onPress={() => router.push("/live" as Href)} style={styles.livePill}>
+          <Text style={styles.liveDot}>●</Text>
+          <Text style={styles.liveText}>LIVE</Text>
+        </Pressable>
+
+        {/* Center navigation tabs */}
+        <View style={styles.centerTabs}>
+          {/* STEM tab (active) */}
+          <Pressable onPress={() => router.push("/post" as Href)}><Text style={styles.topTabActive}>STEM</Text></Pressable>
+          {/* Explore tab */}
           <Pressable onPress={() => router.push("/post" as Href)}><Text style={styles.topTabDim}>Explore</Text></Pressable>
+          {/* Following tab */}
           <Pressable onPress={() => router.push("/post" as Href)}><Text style={styles.topTabDim}>Following</Text></Pressable>
-          <Text style={styles.topTabActive}>For You</Text>
+          {/* For You tab */}
+          <Pressable onPress={() => router.push("/post" as Href)}><Text style={styles.topTabDim}>For You</Text></Pressable>
         </View>
-  <Pressable onPress={() => router.push("/search" as Href)} style={styles.searchBtn}>
+
+        {/* Search icon button */}
+        <Pressable onPress={() => router.push("/search" as Href)} style={styles.searchBtn}>
           <Ionicons name="search" size={20} color="#fff" />
         </Pressable>
       </SafeAreaView>
-
-      {/* Big central play triangle (decorative) */}
-  <Pressable onPress={() => router.push("/post" as Href)} style={styles.playBtn}>
+      {/* Central play button (decorative) */}
+      <Pressable onPress={() => router.push("/post" as Href)} style={styles.playBtn}>
         <MaterialIcons name="play-arrow" size={56} color="rgba(255,255,255,0.9)" />
       </Pressable>
 
       {/* Caption overlay */}
       <View style={styles.captionWrap}>
+        {/* Caption text */}
         <Text style={styles.captionText}>
           POV: when you catch your married boss flirting with another woman that’s not his wife
         </Text>
@@ -41,41 +51,50 @@ export default function HomeScreen() {
 
       {/* Right action rail */}
       <View style={styles.rightRail}>
-  <Pressable onPress={() => router.push("/user" as Href)} style={styles.avatarWrap}>
+        {/* User avatar with plus badge */}
+        <Pressable onPress={() => router.push("/user" as Href)} style={styles.avatarWrap}>
           <View style={styles.avatar} />
           <View style={styles.plusBadge}><Text style={styles.plus}>＋</Text></View>
         </Pressable>
 
-  <Pressable onPress={() => router.push("/post" as Href)} style={styles.railBtn}>
+        {/* Like button */}
+        <Pressable onPress={() => router.push("/post" as Href)} style={styles.railBtn}>
           <Ionicons name="heart" size={28} color="#fff" />
           <Text style={styles.railCount}>22.3K</Text>
         </Pressable>
-  <Pressable onPress={() => router.push("/(modals)/comments" as Href)} style={styles.railBtn}>
+        {/* Comment button */}
+        <Pressable onPress={() => router.push("/(modals)/comments" as Href)} style={styles.railBtn}>
           <Ionicons name="chatbubble" size={26} color="#fff" />
           <Text style={styles.railCount}>142</Text>
         </Pressable>
-  <Pressable onPress={() => router.push("/(modals)/share" as Href)} style={styles.railBtn}>
+        {/* Share button */}
+        <Pressable onPress={() => router.push("/(modals)/share" as Href)} style={styles.railBtn}>
           <Ionicons name="share-social" size={26} color="#fff" />
           <Text style={styles.railCount}>551</Text>
         </Pressable>
-  <Pressable onPress={() => router.push("/post" as Href)} style={styles.railBtn}>
+        {/* Bookmark button */}
+        <Pressable onPress={() => router.push("/post" as Href)} style={styles.railBtn}>
           <Ionicons name="bookmark" size={24} color="#fff" />
           <Text style={styles.railCount}>797</Text>
         </Pressable>
       </View>
 
-      {/* Bottom caption + music + scrubber */}
+      {/* Bottom overlay area */}
       <View style={styles.bottomArea}>
+        {/* User handle */}
         <Text style={styles.handle}>charrrly.k</Text>
+        {/* Description text */}
         <Text style={styles.desc} numberOfLines={1}>
           😂 I’m telling my work bestie first @Tyems #fyp #explorepage #viral
         </Text>
 
-  <Pressable onPress={() => router.push("/music" as Href)} style={styles.musicRow}>
+        {/* Music row */}
+        <Pressable onPress={() => router.push("/music" as Href)} style={styles.musicRow}>
           <Ionicons name="musical-notes" size={14} color="#fff" />
           <Text style={styles.musicText} numberOfLines={1}>Contains: BODY (danz) – …</Text>
         </Pressable>
 
+        {/* Progress scrubber */}
         <View style={styles.scrubberWrap}>
           <View style={styles.scrubber} />
           <View style={styles.scrubberThumb} />
@@ -87,9 +106,9 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000" },
-  videoPlaceholder: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "#fff" },
+  videoPlaceholder: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "#000" },
 
-  topBar: { position: "absolute", top: 0, left: 0, right: 0, paddingTop: 6, paddingHorizontal: 12,
+  topBar: { position: "absolute", top: 0, left: 0, right: 0, paddingTop: 6, paddingHorizontal: 16,
     flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   leftTop: { flexDirection: "row", alignItems: "center", gap: 12 },
   livePill: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(0,0,0,0.4)",
@@ -99,6 +118,7 @@ const styles = StyleSheet.create({
   topTabDim: { color: "#bbb", fontWeight: "600" },
   topTabActive: { color: "#fff", fontWeight: "800" },
   searchBtn: { padding: 8 },
+  centerTabs: { flexDirection: "row", alignItems: "center", gap: 24 },
 
   playBtn: { position: "absolute", top: "42%", alignSelf: "center", opacity: 0.9 },
 

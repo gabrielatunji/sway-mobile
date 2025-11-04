@@ -1,4 +1,5 @@
-import { SafeAreaView, StyleSheet, Text, View, Pressable } from "react-native";
+import { StyleSheet, Text, View, Pressable } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, type Href } from "expo-router";
 
 export default function MusicScreen() {
