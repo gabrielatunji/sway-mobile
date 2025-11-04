@@ -4,6 +4,7 @@ import { useRouter, type Href } from "expo-router";
 
 export default function UserScreen() {
   const router = useRouter();
+  const handleFollow = () => console.log("[user] follow flow coming soon");
 
   return (
     <SafeAreaView style={styles.container}>
@@ -20,13 +21,13 @@ export default function UserScreen() {
       </Text>
 
       <View style={styles.actions}>
-        <Pressable style={styles.follow} onPress={() => router.push("/post" as Href)}>
+  <Pressable style={styles.follow} onPress={handleFollow}>
           <Text style={styles.followText}>Follow</Text>
         </Pressable>
         <Pressable style={styles.secondary} onPress={() => router.push("/(modals)/share" as Href)}>
           <Text style={styles.secondaryText}>Share profile</Text>
         </Pressable>
-        <Pressable style={styles.secondary} onPress={() => router.push("/(tabs)/home" as Href)}>
+  <Pressable style={styles.secondary} onPress={() => router.push("/home" as Href)}>
           <Text style={styles.secondaryText}>Back to feed</Text>
         </Pressable>
       </View>

@@ -5,10 +5,10 @@ import { useRouter, type Href } from "expo-router";
 export default function ShareModal() {
   const router = useRouter();
 
-  const shareOptions: Array<{ label: string; route: Href }> = [
-    { label: "Copy link", route: "/post" as Href },
-    { label: "Share to inbox", route: "/(tabs)/inbox" as Href },
-    { label: "Open profile", route: "/user" as Href },
+  const shareOptions: Array<{ label: string; action: () => void }> = [
+    { label: "Copy link", action: () => console.log("[share] copy link coming soon") },
+    { label: "Share to inbox", action: () => console.log("[share] inbox share coming soon") },
+    { label: "Open profile", action: () => router.push("/user" as Href) },
   ];
 
   return (
@@ -16,7 +16,7 @@ export default function ShareModal() {
       <Text style={styles.title}>Share</Text>
       <View style={styles.options}>
         {shareOptions.map((option) => (
-          <Pressable key={option.label} style={styles.optionButton} onPress={() => router.push(option.route)}>
+          <Pressable key={option.label} style={styles.optionButton} onPress={option.action}>
             <Text style={styles.optionLabel}>{option.label}</Text>
           </Pressable>
         ))}

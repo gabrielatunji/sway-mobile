@@ -4,6 +4,7 @@ import { useRouter, type Href } from "expo-router";
 
 export default function SearchScreen() {
   const router = useRouter();
+  const handleTrendingSounds = () => console.log("[search] trending sounds coming soon");
 
   return (
     <SafeAreaView style={styles.container}>
@@ -15,13 +16,13 @@ export default function SearchScreen() {
       />
 
       <View style={styles.quickLinks}>
-        <Pressable style={styles.quickLink} onPress={() => router.push("/music" as Href)}>
+  <Pressable style={styles.quickLink} onPress={handleTrendingSounds}>
           <Text style={styles.quickLinkText}>Trending Sounds</Text>
         </Pressable>
         <Pressable style={styles.quickLink} onPress={() => router.push("/user" as Href)}>
           <Text style={styles.quickLinkText}>Top Creators</Text>
         </Pressable>
-        <Pressable style={styles.quickLink} onPress={() => router.push("/(tabs)/home" as Href)}>
+  <Pressable style={styles.quickLink} onPress={() => router.push("/home" as Href)}>
           <Text style={styles.quickLinkText}>Back to Feed</Text>
         </Pressable>
       </View>

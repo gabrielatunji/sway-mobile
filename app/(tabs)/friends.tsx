@@ -4,6 +4,7 @@ import { useRouter, type Href } from "expo-router";
 
 export default function FriendsScreen() {
   const router = useRouter();
+  const handleInvite = () => console.log("[friends] invitations coming soon");
 
   return (
     <SafeAreaView style={styles.container}>
@@ -12,7 +13,7 @@ export default function FriendsScreen() {
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Invite Contacts</Text>
-        <Pressable style={styles.cardButton} onPress={() => router.push("/post" as Href)}>
+  <Pressable style={styles.cardButton} onPress={handleInvite}>
           <Text style={styles.cardButtonText}>Send Invite</Text>
         </Pressable>
       </View>
@@ -26,7 +27,7 @@ export default function FriendsScreen() {
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Back to Feed</Text>
-        <Pressable style={styles.cardButton} onPress={() => router.push("/(tabs)/home" as Href)}>
+  <Pressable style={styles.cardButton} onPress={() => router.push("/home" as Href)}>
           <Text style={styles.cardButtonText}>Go Home</Text>
         </Pressable>
       </View>

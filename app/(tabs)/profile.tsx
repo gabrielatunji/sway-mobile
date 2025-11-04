@@ -4,6 +4,7 @@ import { useRouter, type Href } from "expo-router";
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const handleDrafts = () => console.log("[profile] drafts coming soon");
 
   return (
     <SafeAreaView style={styles.container}>
@@ -13,10 +14,10 @@ export default function ProfileScreen() {
         <Pressable style={styles.button} onPress={() => router.push("/user" as Href)}>
           <Text style={styles.buttonText}>View Public Profile</Text>
         </Pressable>
-        <Pressable style={styles.button} onPress={() => router.push("/post" as Href)}>
+  <Pressable style={styles.button} onPress={handleDrafts}>
           <Text style={styles.buttonText}>Open Drafts</Text>
         </Pressable>
-        <Pressable style={styles.button} onPress={() => router.push("/(tabs)/home" as Href)}>
+  <Pressable style={styles.button} onPress={() => router.push("/home" as Href)}>
           <Text style={styles.buttonText}>Back to Feed</Text>
         </Pressable>
       </View>

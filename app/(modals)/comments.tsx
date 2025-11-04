@@ -10,6 +10,7 @@ const MOCK_COMMENTS = [
 
 export default function CommentsModal() {
   const router = useRouter();
+  const handleReply = () => console.log("[comments] reply flow coming soon");
 
   return (
     <SafeAreaView style={styles.container}>
@@ -32,7 +33,7 @@ export default function CommentsModal() {
         contentContainerStyle={styles.listContent}
       />
 
-      <Pressable style={styles.cta} onPress={() => router.push("/post" as Href)}>
+  <Pressable style={styles.cta} onPress={handleReply}>
         <Text style={styles.ctaText}>Reply with video</Text>
       </Pressable>
     </SafeAreaView>

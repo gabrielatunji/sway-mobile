@@ -18,6 +18,9 @@ const MARKET_LABELS: Record<string, string> = {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const handlePlaceholder = (label: string) => {
+    console.log(`[home] ${label} coming soon`);
+  };
 
   // TODO: Replace with feed-driven market details once available
   const market = {
@@ -41,11 +44,17 @@ export default function HomeScreen() {
         {/* Center navigation tabs */}
         <View style={styles.centerTabs}>
           {/* Markets tab */}
-          <Pressable onPress={() => router.push("/post" as Href)}><Text style={styles.topTabActive}>Markets</Text></Pressable>
+          <Pressable onPress={() => handlePlaceholder("Markets tab switch")}>
+            <Text style={styles.topTabActive}>Markets</Text>
+          </Pressable>
           {/* Following tab */}
-          <Pressable onPress={() => router.push("/post" as Href)}><Text style={styles.topTabDim}>Following</Text></Pressable>
+          <Pressable onPress={() => handlePlaceholder("Following tab switch")}>
+            <Text style={styles.topTabDim}>Following</Text>
+          </Pressable>
           {/* Your Bets tab */}
-          <Pressable onPress={() => router.push("/post" as Href)}><Text style={styles.topTabDim}>Your Bets</Text></Pressable>
+          <Pressable onPress={() => handlePlaceholder("Your Bets tab switch")}>
+            <Text style={styles.topTabDim}>Your Bets</Text>
+          </Pressable>
         </View>
         {/* Search icon button */}
         <Pressable onPress={() => router.push("/search" as Href)} style={styles.searchBtn}>
@@ -61,7 +70,7 @@ export default function HomeScreen() {
           <View style={styles.plusBadge}><Text style={styles.plus}>＋</Text></View>
         </Pressable>
         {/* Like button */}
-        <Pressable onPress={() => router.push("/post" as Href)} style={styles.railBtn}>
+  <Pressable onPress={() => handlePlaceholder("like clip") } style={styles.railBtn}>
           <Ionicons name="heart" size={28} color="#fff" />
           <Text style={styles.railCount}>22.3K</Text>
         </Pressable>
@@ -76,7 +85,7 @@ export default function HomeScreen() {
           <Text style={styles.railCount}>551</Text>
         </Pressable>
         {/* Bookmark button */}
-        <Pressable onPress={() => router.push("/post" as Href)} style={styles.railBtn}>
+  <Pressable onPress={() => handlePlaceholder("bookmark clip") } style={styles.railBtn}>
           <Ionicons name="bookmark" size={24} color="#fff" />
           <Text style={styles.railCount}>797</Text>
         </Pressable>
