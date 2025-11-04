@@ -1,5 +1,16 @@
+import { useRef, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  Image,
+  ScrollView,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  useWindowDimensions,
+} from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { View, Text, StyleSheet, Pressable, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -18,8 +29,23 @@ const MARKET_LABELS: Record<string, string> = {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const scrollRef = useRef<ScrollView | null>(null);
+  const { width } = useWindowDimensions();
+  const [activeIndex, setActiveIndex] = useState(0);
+
   const handlePlaceholder = (label: string) => {
     console.log(`[home] ${label} coming soon`);
+  };
+
+  const handleTabPress = (index: number) => {
+    setActiveIndex(index);
+    scrollRef.current?.scrollTo({ x: index * width, animated: true });
+  };
+
+  const handleMomentumScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const nextIndex = Math.round(offsetX / width);
+    setActiveIndex(nextIndex);
   };
 
   // TODO: Replace with feed-driven market details once available
@@ -35,94 +61,125 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Video placeholder background */}
-      <View style={styles.videoPlaceholder} />
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={handleMomentumScrollEnd}
+        style={styles.pager}
+        contentContainerStyle={styles.pagerContent}
+      >
+        <View style={[styles.page, { width }]}>
+          <View style={styles.pageContent}>
+            <View style={styles.videoPlaceholder} />
 
-      {/* Top overlay bar */}
+            <View style={styles.rightRail}>
+              <Pressable onPress={() => router.push("/user" as Href)} style={styles.avatarWrap}>
+                <View style={styles.avatar} />
+                <View style={styles.plusBadge}>
+                  <Text style={styles.plus}>＋</Text>
+                </View>
+              </Pressable>
+              <Pressable onPress={() => handlePlaceholder("like clip")} style={styles.railBtn}>
+                <Ionicons name="heart" size={28} color="#fff" />
+                <Text style={styles.railCount}>22.3K</Text>
+              </Pressable>
+              <Pressable onPress={() => router.push("/(modals)/comments" as Href)} style={styles.railBtn}>
+                <Ionicons name="chatbubble" size={26} color="#fff" />
+                <Text style={styles.railCount}>142</Text>
+              </Pressable>
+              <Pressable onPress={() => router.push("/(modals)/share" as Href)} style={styles.railBtn}>
+                <Ionicons name="share-social" size={26} color="#fff" />
+                <Text style={styles.railCount}>551</Text>
+              </Pressable>
+              <Pressable onPress={() => handlePlaceholder("bookmark clip")} style={styles.railBtn}>
+                <Ionicons name="bookmark" size={24} color="#fff" />
+                <Text style={styles.railCount}>797</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.captionWrap}>
+              <View style={styles.captionHeader}>
+                <Image source={{ uri: marketLogoUri }} style={styles.marketLogo} />
+                <Text style={styles.marketSource}>{marketSourceLabel}</Text>
+              </View>
+            </View>
+
+            <View style={styles.bottomArea}>
+              <Text style={styles.headlineText}>{market.headline}</Text>
+              <View style={styles.yesNoRow}>
+                <View style={styles.yesBox}>
+                  <Text style={styles.yesText}>
+                    Yes <Text style={styles.priceText}>{formatPrice(market.prices.yes)}</Text>
+                  </Text>
+                </View>
+                <View style={styles.noBox}>
+                  <Text style={styles.noText}>
+                    No <Text style={styles.priceText}>{formatPrice(market.prices.no)}</Text>
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        <View style={[styles.page, { width }]}>
+          <View style={styles.placeholderWrap}>
+            <Text style={styles.placeholderTitle}>Following</Text>
+            <Text style={styles.placeholderDescription}>Curated feed coming soon.</Text>
+          </View>
+        </View>
+
+        <View style={[styles.page, { width }]}>
+          <View style={styles.placeholderWrap}>
+            <Text style={styles.placeholderTitle}>Your Bets</Text>
+            <Text style={styles.placeholderDescription}>Track your positions here soon.</Text>
+          </View>
+        </View>
+      </ScrollView>
+
       <SafeAreaView style={styles.topBar}>
         <View style={styles.topBarSpacer} />
-        {/* Center navigation tabs */}
         <View style={styles.centerTabs}>
-          {/* Markets tab */}
-          <Pressable onPress={() => handlePlaceholder("Markets tab switch")}>
-            <Text style={styles.topTabActive}>Markets</Text>
+          <Pressable onPress={() => handleTabPress(0)}>
+            <Text style={activeIndex === 0 ? styles.topTabActive : styles.topTabDim}>Markets</Text>
           </Pressable>
-          {/* Following tab */}
-          <Pressable onPress={() => handlePlaceholder("Following tab switch")}>
-            <Text style={styles.topTabDim}>Following</Text>
+          <Pressable onPress={() => handleTabPress(1)}>
+            <Text style={activeIndex === 1 ? styles.topTabActive : styles.topTabDim}>Following</Text>
           </Pressable>
-          {/* Your Bets tab */}
-          <Pressable onPress={() => handlePlaceholder("Your Bets tab switch")}>
-            <Text style={styles.topTabDim}>Your Bets</Text>
+          <Pressable onPress={() => handleTabPress(2)}>
+            <Text style={activeIndex === 2 ? styles.topTabActive : styles.topTabDim}>Your Bets</Text>
           </Pressable>
         </View>
-        {/* Search icon button */}
         <Pressable onPress={() => router.push("/search" as Href)} style={styles.searchBtn}>
           <Ionicons name="search" size={20} color="#fff" />
         </Pressable>
       </SafeAreaView>
-
-      {/* Right action rail */}
-      <View style={styles.rightRail}>
-        {/* User avatar with plus badge */}
-        <Pressable onPress={() => router.push("/user" as Href)} style={styles.avatarWrap}>
-          <View style={styles.avatar} />
-          <View style={styles.plusBadge}><Text style={styles.plus}>＋</Text></View>
-        </Pressable>
-        {/* Like button */}
-  <Pressable onPress={() => handlePlaceholder("like clip") } style={styles.railBtn}>
-          <Ionicons name="heart" size={28} color="#fff" />
-          <Text style={styles.railCount}>22.3K</Text>
-        </Pressable>
-        {/* Comment button */}
-        <Pressable onPress={() => router.push("/(modals)/comments" as Href)} style={styles.railBtn}>
-          <Ionicons name="chatbubble" size={26} color="#fff" />
-          <Text style={styles.railCount}>142</Text>
-        </Pressable>
-        {/* Share button */}
-        <Pressable onPress={() => router.push("/(modals)/share" as Href)} style={styles.railBtn}>
-          <Ionicons name="share-social" size={26} color="#fff" />
-          <Text style={styles.railCount}>551</Text>
-        </Pressable>
-        {/* Bookmark button */}
-  <Pressable onPress={() => handlePlaceholder("bookmark clip") } style={styles.railBtn}>
-          <Ionicons name="bookmark" size={24} color="#fff" />
-          <Text style={styles.railCount}>797</Text>
-        </Pressable>
-      </View>
-
-      {/* Caption overlay */}
-      <View style={styles.captionWrap}>
-        <View style={styles.captionHeader}>
-          <Image source={{ uri: marketLogoUri }} style={styles.marketLogo} />
-          <Text style={styles.marketSource}>{marketSourceLabel}</Text>
-        </View>
-      </View>
-
-
-      {/* Bottom overlay area */}
-      <View style={styles.bottomArea}>
-        <Text style={styles.headlineText}>{market.headline}</Text>
-        {/* Yes/No price row */}
-        <View style={styles.yesNoRow}>
-          <View style={styles.yesBox}>
-            <Text style={styles.yesText}>Yes <Text style={styles.priceText}>{formatPrice(market.prices.yes)}</Text></Text>
-          </View>
-          <View style={styles.noBox}>
-            <Text style={styles.noText}>No <Text style={styles.priceText}>{formatPrice(market.prices.no)}</Text></Text>
-          </View>
-        </View>
-      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000" },
+  pager: { flex: 1 },
+  pagerContent: { height: "100%" },
+  page: { height: "100%" },
+  pageContent: { flex: 1 },
   videoPlaceholder: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "#000" },
 
-  topBar: { position: "absolute", top: 0, left: 0, right: 0, paddingTop: 6, paddingHorizontal: 16,
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  topBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingTop: 6,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    zIndex: 10,
+  },
   topBarSpacer: { width: 40 },
   topTabDim: { color: "#bbb", fontWeight: "600" },
   topTabActive: { color: "#fff", fontWeight: "800" },
@@ -136,17 +193,39 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  captionWrap: { position: "absolute", top: 110, left: 20, right: 120, backgroundColor: "rgba(0,0,0,0.4)",
-    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
+  captionWrap: {
+    position: "absolute",
+    top: 110,
+    left: 20,
+    right: 120,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
   captionHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
   marketLogo: { width: 44, height: 44, borderRadius: 10 },
   marketSource: { color: "#fff", fontWeight: "700", fontSize: 18 },
 
-  rightRail: { position: "absolute", right: 10, top: 160, alignItems: "center", gap: 18 },
+  rightRail: {
+    position: "absolute",
+    right: 10,
+    top: "50%",
+    transform: [{ translateY: -140 }],
+    alignItems: "center",
+    gap: 18,
+  },
   avatarWrap: { alignItems: "center" },
   avatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: "#999" },
-  plusBadge: { position: "absolute", bottom: -4, alignSelf: "center", backgroundColor: "#1da1f2",
-    paddingHorizontal: 6, paddingVertical: 0, borderRadius: 10 },
+  plusBadge: {
+    position: "absolute",
+    bottom: -4,
+    alignSelf: "center",
+    backgroundColor: "#1da1f2",
+    paddingHorizontal: 6,
+    paddingVertical: 0,
+    borderRadius: 10,
+  },
   plus: { color: "#fff", fontSize: 16, fontWeight: "900", lineHeight: 18 },
   railBtn: { alignItems: "center" },
   railCount: { color: "#fff", marginTop: 4, fontSize: 12, fontWeight: "600" },
@@ -194,4 +273,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "rgba(255,255,255,0.9)",
   },
+
+  placeholderWrap: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
+  placeholderTitle: { color: "#fff", fontSize: 28, fontWeight: "800" },
+  placeholderDescription: { color: "#aaa", fontSize: 16, textAlign: "center", paddingHorizontal: 32 },
 });
