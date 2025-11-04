@@ -5,6 +5,7 @@ export function useFeed(feedType: 'forYou' | 'following') {
   return useInfiniteQuery<FeedResponse>({
     queryKey: ['feed', feedType],
     queryFn: ({ pageParam = 0 }) => feedService.getFeed(feedType, pageParam as number),
+    initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage?.nextCursor ?? null,
     staleTime: 1000 * 60 * 5,
   });

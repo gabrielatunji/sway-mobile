@@ -22,7 +22,7 @@ export default function AuthSelection() {
     <View className="flex-1 bg-black px-6 justify-center">
       <Modal />
       <View className="items-center mb-12">
-        <Image source={require('../../src/assets/images/facebooklogo.webp')} style={{ width: 128, height: 128 }} />
+        <Image source={require('../../assets/images/facebooklogo.webp')} style={{ width: 128, height: 128 }} />
       </View>
 
       <Text className="text-white text-2xl font-bold text-center mb-2">Select your account</Text>
