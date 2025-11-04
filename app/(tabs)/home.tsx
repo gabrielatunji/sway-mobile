@@ -1,4 +1,6 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
+// MOCK DATA: Replace with real API integration when ready
+import { mockMarkets } from '../../src/mocks/mockMarkets';
 import {
   View,
   Text,
@@ -6,6 +8,7 @@ import {
   Pressable,
   Image,
   ScrollView,
+  FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
   useWindowDimensions,
@@ -30,8 +33,17 @@ const MARKET_LABELS: Record<string, string> = {
 export default function HomeScreen() {
   const router = useRouter();
   const scrollRef = useRef<ScrollView | null>(null);
-  const { width } = useWindowDimensions();
-  const [activeIndex, setActiveIndex] = useState(0);
+  const { width, height } = useWindowDimensions();
+  const [activeIndex, setActiveIndex] = useState(2);
+  // Scroll to the Markets page on mount so the correct content is visible by default
+  useEffect(() => {
+    if (activeIndex !== 0 && scrollRef.current) {
+      // Timeout ensures ScrollView is ready
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ x: activeIndex * width, animated: false });
+      }, 0);
+    }
+  }, [activeIndex, width]);
 
   const handlePlaceholder = (label: string) => {
     console.log(`[home] ${label} coming soon`);
@@ -48,19 +60,13 @@ export default function HomeScreen() {
     setActiveIndex(nextIndex);
   };
 
-  // TODO: Replace with feed-driven market details once available
-  const market = {
-    source: "polymarket",
-    headline: "When will the Government Shutdown end?",
-    prices: { yes: 0.8, no: 99.3 },
-  };
 
-  const marketLogoUri = MARKET_LOGOS[market.source] ?? MARKET_LOGOS.default;
-  const marketSourceLabel = MARKET_LABELS[market.source] ?? "Exact Market";
+  // MOCK FEED: Swap this out for real API data when available
+  // To use real data, remove the mockMarkets import and replace usages below
   const formatPrice = (value: number) => `${value.toFixed(1)}¢`;
-
   return (
     <View style={styles.container}>
+
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -68,74 +74,87 @@ export default function HomeScreen() {
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleMomentumScrollEnd}
         style={styles.pager}
-        contentContainerStyle={styles.pagerContent}
       >
-        <View style={[styles.page, { width }]}>
-          <View style={styles.pageContent}>
-            <View style={styles.videoPlaceholder} />
-
-            <View style={styles.rightRail}>
-              <Pressable onPress={() => router.push("/user" as Href)} style={styles.avatarWrap}>
-                <View style={styles.avatar} />
-                <View style={styles.plusBadge}>
-                  <Text style={styles.plus}>＋</Text>
-                </View>
-              </Pressable>
-              <Pressable onPress={() => handlePlaceholder("like clip")} style={styles.railBtn}>
-                <Ionicons name="heart" size={28} color="#fff" />
-                <Text style={styles.railCount}>22.3K</Text>
-              </Pressable>
-              <Pressable onPress={() => router.push("/(modals)/comments" as Href)} style={styles.railBtn}>
-                <Ionicons name="chatbubble" size={26} color="#fff" />
-                <Text style={styles.railCount}>142</Text>
-              </Pressable>
-              <Pressable onPress={() => router.push("/(modals)/share" as Href)} style={styles.railBtn}>
-                <Ionicons name="share-social" size={26} color="#fff" />
-                <Text style={styles.railCount}>551</Text>
-              </Pressable>
-              <Pressable onPress={() => handlePlaceholder("bookmark clip")} style={styles.railBtn}>
-                <Ionicons name="bookmark" size={24} color="#fff" />
-                <Text style={styles.railCount}>797</Text>
-              </Pressable>
-            </View>
-
-            <View style={styles.captionWrap}>
-              <View style={styles.captionHeader}>
-                <Image source={{ uri: marketLogoUri }} style={styles.marketLogo} />
-                <Text style={styles.marketSource}>{marketSourceLabel}</Text>
-              </View>
-            </View>
-
-            <View style={styles.bottomArea}>
-              <Text style={styles.headlineText}>{market.headline}</Text>
-              <View style={styles.yesNoRow}>
-                <View style={styles.yesBox}>
-                  <Text style={styles.yesText}>
-                    Yes <Text style={styles.priceText}>{formatPrice(market.prices.yes)}</Text>
-                  </Text>
-                </View>
-                <View style={styles.noBox}>
-                  <Text style={styles.noText}>
-                    No <Text style={styles.priceText}>{formatPrice(market.prices.no)}</Text>
-                  </Text>
-                </View>
-              </View>
-            </View>
+        {/* My Bets */}
+        <View style={[styles.page, { width, height }]}> 
+          <View style={styles.placeholderWrap}>
+            <Text style={styles.placeholderTitle}>My Bets</Text>
+            <Text style={styles.placeholderDescription}>Track your positions here soon.</Text>
           </View>
         </View>
 
-        <View style={[styles.page, { width }]}>
+        {/* Watch List */}
+        <View style={[styles.page, { width, height }]}> 
           <View style={styles.placeholderWrap}>
-            <Text style={styles.placeholderTitle}>Following</Text>
+            <Text style={styles.placeholderTitle}>Watch List</Text>
             <Text style={styles.placeholderDescription}>Curated feed coming soon.</Text>
           </View>
         </View>
 
-        <View style={[styles.page, { width }]}>
-          <View style={styles.placeholderWrap}>
-            <Text style={styles.placeholderTitle}>Your Bets</Text>
-            <Text style={styles.placeholderDescription}>Track your positions here soon.</Text>
-          </View>
+        {/* Markets */}
+        <View style={[styles.page, { width, height }]}> 
+          <FlatList
+            data={mockMarkets}
+            keyExtractor={(item) => item.id}
+            pagingEnabled
+            showsVerticalScrollIndicator={false}
+            snapToInterval={height}
+            decelerationRate="fast"
+            renderItem={({ item }) => {
+              const marketLogoUri = MARKET_LOGOS[item.source] ?? MARKET_LOGOS.default;
+              const marketSourceLabel = MARKET_LABELS[item.source] ?? "Exact Market";
+              return (
+                <View style={{ width, height }}> 
+                  <Image source={item.image} style={styles.picturePlaceholder} resizeMode="cover" />
+                  <View style={styles.rightRail}>
+                    <Pressable onPress={() => router.push("/user" as Href)} style={styles.avatarWrap}>
+                      <View style={styles.avatar} />
+                      <View style={styles.plusBadge}>
+                        <Text style={styles.plus}>＋</Text>
+                      </View>
+                    </Pressable>
+                    <Pressable onPress={() => handlePlaceholder("like clip")} style={styles.railBtn}>
+                      <Ionicons name="heart" size={28} color="#fff" />
+                      <Text style={styles.railCount}>22.3K</Text>
+                    </Pressable>
+                    <Pressable onPress={() => router.push("/(modals)/comments" as Href)} style={styles.railBtn}>
+                      <Ionicons name="chatbubble" size={26} color="#fff" />
+                      <Text style={styles.railCount}>142</Text>
+                    </Pressable>
+                    <Pressable onPress={() => router.push("/(modals)/share" as Href)} style={styles.railBtn}>
+                      <Ionicons name="share-social" size={26} color="#fff" />
+                      <Text style={styles.railCount}>551</Text>
+                    </Pressable>
+                    <Pressable onPress={() => handlePlaceholder("bookmark clip")} style={styles.railBtn}>
+                      <Ionicons name="bookmark" size={24} color="#fff" />
+                      <Text style={styles.railCount}>797</Text>
+                    </Pressable>
+                  </View>
+                  <View style={styles.captionWrap}>
+                    <View style={styles.captionHeader}>
+                      <Image source={{ uri: marketLogoUri }} style={styles.marketLogo} />
+                      <Text style={styles.marketSource}>{marketSourceLabel}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.bottomArea}>
+                    <Text style={styles.headlineText}>{item.headline}</Text>
+                    <View style={styles.yesNoRow}>
+                      <View style={styles.yesBox}>
+                        <Text style={styles.yesText}>
+                          Yes <Text style={styles.priceText}>{formatPrice(item.prices.yes)}</Text>
+                        </Text>
+                      </View>
+                      <View style={styles.noBox}>
+                        <Text style={styles.noText}>
+                          No <Text style={styles.priceText}>{formatPrice(item.prices.no)}</Text>
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              );
+            }}
+          />
         </View>
       </ScrollView>
 
@@ -143,13 +162,13 @@ export default function HomeScreen() {
         <View style={styles.topBarSpacer} />
         <View style={styles.centerTabs}>
           <Pressable onPress={() => handleTabPress(0)}>
-            <Text style={activeIndex === 0 ? styles.topTabActive : styles.topTabDim}>Markets</Text>
+            <Text style={activeIndex === 0 ? styles.topTabActive : styles.topTabDim}>My Bets</Text>
           </Pressable>
           <Pressable onPress={() => handleTabPress(1)}>
-            <Text style={activeIndex === 1 ? styles.topTabActive : styles.topTabDim}>Following</Text>
+            <Text style={activeIndex === 1 ? styles.topTabActive : styles.topTabDim}>Watch List</Text>
           </Pressable>
           <Pressable onPress={() => handleTabPress(2)}>
-            <Text style={activeIndex === 2 ? styles.topTabActive : styles.topTabDim}>Your Bets</Text>
+            <Text style={activeIndex === 2 ? styles.topTabActive : styles.topTabDim}>Markets</Text>
           </Pressable>
         </View>
         <Pressable onPress={() => router.push("/search" as Href)} style={styles.searchBtn}>
@@ -166,7 +185,20 @@ const styles = StyleSheet.create({
   pagerContent: { height: "100%" },
   page: { height: "100%" },
   pageContent: { flex: 1 },
-  videoPlaceholder: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "#000" },
+  marketSlide: { width: "100%", height: "100%" },
+  carousel: { flex: 1 },
+  // 9:16 aspect ratio background image (fills screen, centered)
+  picturePlaceholder: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#000",
+    width: '100%',
+    height: '100%',
+    alignSelf: 'center',
+  },
 
   topBar: {
     position: "absolute",
