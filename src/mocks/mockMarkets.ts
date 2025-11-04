@@ -19,7 +19,7 @@ export const mockMarkets = [
   {
     id: '3',
     headline: 'Will SpaceX land humans on Mars by 2035?',
-    source: 'predictit',
+    source: 'manifold',
     prices: { yes: 33.3, no: 66.7 },
     image: require('./mockAssets/mock3.jpg'), // Drop your image in assets/images and update the filename
   },

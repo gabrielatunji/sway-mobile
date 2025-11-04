@@ -17,16 +17,15 @@ import { useRouter, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
-const MARKET_LOGOS: Record<string, string> = {
-  polymarket: "https://placehold.co/56x56/101828/FFFFFF?text=PM",
-  predictit: "https://placehold.co/56x56/0f172a/FFFFFF?text=PI",
-  kalshi: "https://placehold.co/56x56/1e293b/FFFFFF?text=KA",
-  default: "https://placehold.co/56x56/111111/FFFFFF?text=EX",
+const MARKET_LOGOS: Record<string, any> = {
+  polymarket: require('../../src/mocks/mockAssets/polymarket.png'),
+  manifold: require('../../src/mocks/mockAssets/manifold.png'),
+  kalshi: require('../../src/mocks/mockAssets/kalshi.png'),
 };
 
 const MARKET_LABELS: Record<string, string> = {
   polymarket: "Polymarket",
-  predictit: "PredictIt",
+  manifold: "Manifold",
   kalshi: "Kalshi",
 };
 
@@ -101,8 +100,8 @@ export default function HomeScreen() {
             snapToInterval={height}
             decelerationRate="fast"
             renderItem={({ item }) => {
-              const marketLogoUri = MARKET_LOGOS[item.source] ?? MARKET_LOGOS.default;
-              const marketSourceLabel = MARKET_LABELS[item.source] ?? "Exact Market";
+              const marketLogoUri = MARKET_LOGOS[item.source];
+              const marketSourceLabel = MARKET_LABELS[item.source] ?? "Market";
               return (
                 <View style={{ width, height }}> 
                   <Image source={item.image} style={styles.picturePlaceholder} resizeMode="cover" />
@@ -130,12 +129,7 @@ export default function HomeScreen() {
                       <Text style={styles.railCount}>797</Text>
                     </Pressable>
                   </View>
-                  <View style={styles.captionWrap}>
-                    <View style={styles.captionHeader}>
-                      <Image source={{ uri: marketLogoUri }} style={styles.marketLogo} />
-                      <Text style={styles.marketSource}>{marketSourceLabel}</Text>
-                    </View>
-                  </View>
+                  <Image source={marketLogoUri} style={[styles.marketLogo, styles.marketLogoAbsolute]} />
                   <View style={styles.bottomArea}>
                     <Text style={styles.headlineText}>{item.headline}</Text>
                     <View style={styles.yesNoRow}>
@@ -237,6 +231,12 @@ const styles = StyleSheet.create({
   },
   captionHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
   marketLogo: { width: 44, height: 44, borderRadius: 10 },
+  marketLogoAbsolute: {
+    position: 'absolute',
+    top: 110,
+    left: 20,
+    zIndex: 20,
+  },
   marketSource: { color: "#fff", fontWeight: "700", fontSize: 18 },
 
   rightRail: {
