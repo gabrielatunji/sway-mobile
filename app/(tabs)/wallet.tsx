@@ -1,23 +1,27 @@
 import { StyleSheet, Text, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, type Href } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
-export default function ProfileScreen() {
+export default function WalletScreen() {
   const router = useRouter();
-  const handleDrafts = () => console.log("[profile] drafts coming soon");
+  const handleDrafts = () => console.log("[wallet] drafts coming soon");
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.heading}>Profile (Preview)</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <Ionicons name="wallet" size={28} color="#fff" />
+        <Text style={styles.heading}>Wallet (Preview)</Text>
+      </View>
 
       <View style={styles.buttons}>
         <Pressable style={styles.button} onPress={() => router.push("/user" as Href)}>
-          <Text style={styles.buttonText}>View Public Profile</Text>
+          <Text style={styles.buttonText}>View Wallet Details</Text>
         </Pressable>
-  <Pressable style={styles.button} onPress={handleDrafts}>
+        <Pressable style={styles.button} onPress={handleDrafts}>
           <Text style={styles.buttonText}>Open Drafts</Text>
         </Pressable>
-  <Pressable style={styles.button} onPress={() => router.push("/home" as Href)}>
+        <Pressable style={styles.button} onPress={() => router.push("/home" as Href)}>
           <Text style={styles.buttonText}>Back to Feed</Text>
         </Pressable>
       </View>

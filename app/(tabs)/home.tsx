@@ -1,5 +1,7 @@
 
 import { useRef, useState, useEffect } from "react";
+import * as Haptics from 'expo-haptics';
+import { Animated, Easing } from "react-native";
 // MOCK DATA: Replace with real API integration when ready
 import { mockMarkets } from '../../src/mocks/mockMarkets';
 import {
@@ -64,6 +66,29 @@ export default function HomeScreen() {
   // MOCK FEED: Swap this out for real API data when available
   // To use real data, remove the mockMarkets import and replace usages below
   const formatPrice = (value: number) => `${value.toFixed(1)}¢`;
+  // Like animation state
+  const likeAnim = useRef(new Animated.Value(1)).current;
+  const [liked, setLiked] = useState(false);
+
+  const handleLikePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setLiked((prev) => !prev);
+    Animated.sequence([
+      Animated.timing(likeAnim, {
+        toValue: 1.3,
+        duration: 120,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(likeAnim, {
+        toValue: 1,
+        duration: 120,
+        easing: Easing.in(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
   return (
     <View style={styles.container}>
 
@@ -140,17 +165,13 @@ export default function HomeScreen() {
                 <View style={{ width, height }}> 
                   <Image source={item.image} style={styles.picturePlaceholder} resizeMode="cover" />
                   <View style={styles.rightRail}>
-                    <Pressable onPress={() => handlePlaceholder("like clip")} style={styles.railBtn}>
-                      <Ionicons name="heart" size={28} color="#fff" />
-                      <Text style={styles.railCount}>22.3K</Text>
-                    </Pressable>
-                    <Pressable onPress={() => router.push("/(modals)/comments" as Href)} style={styles.railBtn}>
-                      <Ionicons name="chatbubble" size={26} color="#fff" />
-                      <Text style={styles.railCount}>142</Text>
+                    <Pressable onPress={handleLikePress} style={styles.railBtn}>
+                      <Animated.View style={{ transform: [{ scale: likeAnim }] }}>
+                        <Ionicons name="heart" size={28} color={liked ? "#ff3b3b" : "#fff"} />
+                      </Animated.View>
                     </Pressable>
                     <Pressable onPress={() => router.push("/(modals)/share" as Href)} style={styles.railBtn}>
                       <Ionicons name="share-social" size={26} color="#fff" />
-                      <Text style={styles.railCount}>551</Text>
                     </Pressable>
                     <Pressable onPress={() => handlePlaceholder("reminder clip")} style={styles.railBtn}>
                       <Ionicons name="time" size={24} color="#fff" />
@@ -456,7 +477,7 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
   railBtn: { alignItems: "center" },
-  railCount: { color: "#fff", marginTop: 4, fontSize: 12, fontWeight: "600" },
+
 
   // Dynamic bottom area for headline and options
   bottomAreaDynamic: {
