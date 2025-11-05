@@ -4,6 +4,8 @@ import * as Haptics from 'expo-haptics';
 import { Animated, Easing } from "react-native";
 // MOCK DATA: Replace with real API integration when ready
 import { mockMarkets } from '../../src/mocks/mockMarkets';
+import { generateMockChartData } from '../../src/mocks/mockChartData';
+import { mockComments } from '../../src/mocks/mockComments';
 import {
   View,
   Text,
@@ -15,6 +17,8 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
   useWindowDimensions,
+  Platform,
+  type ViewToken,
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -37,9 +41,31 @@ export default function HomeScreen() {
   const scrollRef = useRef<ScrollView | null>(null);
   const { width, height } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(2);
+  const detailPageIndex = 3;
+  const [selectedMarketIndex, setSelectedMarketIndex] = useState(0);
+  const [isDetailVisible, setIsDetailVisible] = useState(false);
+  const selectedMarket = mockMarkets[selectedMarketIndex] ?? mockMarkets[0];
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 70 });
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: Array<ViewToken> }) => {
+      if (!viewableItems?.length) return;
+      const firstVisible = viewableItems[0];
+      if (firstVisible.index !== null && firstVisible.index !== undefined) {
+        setSelectedMarketIndex(firstVisible.index);
+      }
+    }
+  );
+  const detailOptions = selectedMarket
+    ? selectedMarket.options || [
+        { label: 'Yes', value: selectedMarket.prices?.yes },
+        { label: 'No', value: selectedMarket.prices?.no },
+      ]
+    : [];
+  const detailChartData = detailOptions.length ? generateMockChartData(detailOptions) : [];
+  const detailMarketLogoUri = selectedMarket ? MARKET_LOGOS[selectedMarket.source] : undefined;
   // Scroll to the Markets page on mount so the correct content is visible by default
   useEffect(() => {
-    if (activeIndex !== 0 && scrollRef.current) {
+    if (scrollRef.current) {
       // Timeout ensures ScrollView is ready
       setTimeout(() => {
         scrollRef.current?.scrollTo({ x: activeIndex * width, animated: false });
@@ -53,6 +79,7 @@ export default function HomeScreen() {
 
   const handleTabPress = (index: number) => {
     setActiveIndex(index);
+    setIsDetailVisible(false);
     scrollRef.current?.scrollTo({ x: index * width, animated: true });
   };
 
@@ -60,27 +87,39 @@ export default function HomeScreen() {
     const offsetX = event.nativeEvent.contentOffset.x;
     const nextIndex = Math.round(offsetX / width);
     setActiveIndex(nextIndex);
+    setIsDetailVisible(nextIndex === detailPageIndex);
+  };
+
+  const handleHorizontalScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const nextIndex = Math.round(offsetX / width);
+    setActiveIndex((prev) => (prev === nextIndex ? prev : nextIndex));
+    const fractionalIndex = offsetX / width;
+    setIsDetailVisible(fractionalIndex >= detailPageIndex - 0.4);
   };
 
 
   // MOCK FEED: Swap this out for real API data when available
   // To use real data, remove the mockMarkets import and replace usages below
   const formatPrice = (value: number) => `${value.toFixed(1)}¢`;
-  // Like animation state
-  const likeAnim = useRef(new Animated.Value(1)).current;
-  const [liked, setLiked] = useState(false);
+  // Like animation and state per market
+  const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
+  const likeAnims = useRef<Record<string, Animated.Value>>({});
 
-  const handleLikePress = () => {
+  const handleLikePress = (marketId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setLiked((prev) => !prev);
+    setLikedMap((prev) => ({ ...prev, [marketId]: !prev[marketId] }));
+    if (!likeAnims.current[marketId]) {
+      likeAnims.current[marketId] = new Animated.Value(1);
+    }
     Animated.sequence([
-      Animated.timing(likeAnim, {
+      Animated.timing(likeAnims.current[marketId], {
         toValue: 1.3,
         duration: 120,
         easing: Easing.out(Easing.ease),
         useNativeDriver: true,
       }),
-      Animated.timing(likeAnim, {
+      Animated.timing(likeAnims.current[marketId], {
         toValue: 1,
         duration: 120,
         easing: Easing.in(Easing.ease),
@@ -98,6 +137,8 @@ export default function HomeScreen() {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleMomentumScrollEnd}
+        onScroll={handleHorizontalScroll}
+        scrollEventThrottle={16}
         style={styles.pager}
       >
         {/* My Bets */}
@@ -124,6 +165,8 @@ export default function HomeScreen() {
             pagingEnabled
             showsVerticalScrollIndicator={false}
             snapToInterval={height}
+            onViewableItemsChanged={onViewableItemsChanged.current}
+            viewabilityConfig={viewabilityConfig.current}
             decelerationRate="fast"
             renderItem={({ item }) => {
               const marketLogoUri = MARKET_LOGOS[item.source];
@@ -161,23 +204,46 @@ export default function HomeScreen() {
                   return getColor(rank, options.length);
                 });
               }
+              // Determine shadow color based on logo
+              let shadowColor = '#fff';
+              if (item.source === 'polymarket') shadowColor = '#1da1f2';
+              if (item.source === 'manifold') shadowColor = '#ff0050';
+              if (item.source === 'kalshi') shadowColor = '#22c55e';
               return (
-                <View style={{ width, height }}> 
+                <View style={{ width, height }}>
                   <Image source={item.image} style={styles.picturePlaceholder} resizeMode="cover" />
+                  <View
+                    style={[
+                      styles.marketLogoAbsolute,
+                      Platform.OS === 'android' && { elevation: 7 },
+                    ]}
+                  >
+                    <Image
+                      source={marketLogoUri}
+                      style={[
+                        styles.marketLogo,
+                        {
+                          shadowColor,
+                          shadowOffset: { width: 0, height: 0 },
+                          shadowOpacity: 0.45,
+                          shadowRadius: 8,
+                        },
+                      ]}
+                    />
+                  </View>
                   <View style={styles.rightRail}>
-                    <Pressable onPress={handleLikePress} style={styles.railBtn}>
-                      <Animated.View style={{ transform: [{ scale: likeAnim }] }}>
-                        <Ionicons name="heart" size={28} color={liked ? "#ff3b3b" : "#fff"} />
+                    <Pressable onPress={() => handleLikePress(item.id)} style={styles.railBtn}>
+                      <Animated.View style={{ transform: [{ scale: likeAnims.current[item.id] || new Animated.Value(1) }] }}>
+                        <Ionicons name="heart" size={38} color={likedMap[item.id] ? "#ff3b3b" : "#fff"} />
                       </Animated.View>
                     </Pressable>
                     <Pressable onPress={() => router.push("/(modals)/share" as Href)} style={styles.railBtn}>
-                      <Ionicons name="share-social" size={26} color="#fff" />
+                      <Ionicons name="share-social" size={34} color="#fff" />
                     </Pressable>
                     <Pressable onPress={() => handlePlaceholder("reminder clip")} style={styles.railBtn}>
-                      <Ionicons name="time" size={24} color="#fff" />
+                      <Ionicons name="time" size={32} color="#fff" />
                     </Pressable>
                   </View>
-                  <Image source={marketLogoUri} style={[styles.marketLogo, styles.marketLogoAbsolute]} />
                   <View style={styles.bottomAreaDynamic}>
                     <Text style={styles.headlineTextDynamic}>{item.headline}</Text>
                     <View
@@ -239,25 +305,115 @@ export default function HomeScreen() {
             }}
           />
         </View>
+
+        {/* Market Detail */}
+        <View style={[styles.page, { width, height }]}> 
+          {selectedMarket ? (
+            <ScrollView
+              style={styles.detailScrollView}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingTop: 32, paddingBottom: 120 }}
+            >
+              <View style={styles.detailHeader}>
+                {detailMarketLogoUri ? (
+                  <Image source={detailMarketLogoUri} style={styles.detailMarketLogo} />
+                ) : null}
+                <Text style={styles.detailMarketName}>
+                  {selectedMarket?.source ? MARKET_LABELS[selectedMarket.source] : 'Market'}
+                </Text>
+              </View>
+
+              <Text style={styles.detailHeadline}>{selectedMarket.headline}</Text>
+
+              <View style={styles.detailChartContainer}>
+                <View style={styles.detailChartLegend}>
+                  {detailChartData.map((series, idx) => (
+                    <View key={idx} style={styles.detailLegendItem}>
+                      <View style={[styles.detailLegendDot, { backgroundColor: series.color }]} />
+                      <Text style={styles.detailLegendText}>
+                        {series.label}{' '}
+                        {detailOptions[idx]?.value !== undefined ? formatPrice(detailOptions[idx].value!) : ''}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                <View style={styles.detailChart}>
+                  <Text style={styles.detailChartPlaceholder}>📈</Text>
+                  <Text style={styles.detailChartSubtext}>Interactive Chart</Text>
+                </View>
+              </View>
+
+              <View style={styles.detailOptionsSection}>
+                <Text style={styles.detailSectionTitle}>Place Your Bet</Text>
+                <View style={styles.detailOptionsRow}>
+                  {detailOptions.map((opt, idx) => {
+                    let bgColor = '#22c55e';
+                    if (idx === 1) bgColor = '#dc2626';
+                    else if (idx > 1) bgColor = `hsl(${idx * 60}, 70%, 50%)`;
+
+                    return (
+                      <Pressable
+                        key={idx}
+                        style={[
+                          styles.detailOptionBtn,
+                          { backgroundColor: bgColor, flex: detailOptions.length === 2 ? 1 : undefined },
+                        ]}
+                        onPress={() => console.log(`Buy ${opt.label}`)}
+                      >
+                        <Text style={styles.detailOptionLabel}>{opt.label}</Text>
+                        <Text style={styles.detailOptionPrice}>
+                          {opt.value !== undefined ? formatPrice(opt.value) : ''}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+
+              <View style={styles.detailCommentsSection}>
+                <Text style={styles.detailSectionTitle}>Comments ({mockComments.length})</Text>
+                {mockComments.slice(0, 5).map((comment) => (
+                  <View key={comment.id} style={styles.detailCommentCard}>
+                    <View style={styles.detailCommentHeader}>
+                      <View style={styles.detailCommentAvatar} />
+                      <View style={styles.detailCommentMeta}>
+                        <Text style={styles.detailCommentAuthor}>{comment.author}</Text>
+                        <Text style={styles.detailCommentTime}>{comment.time}</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.detailCommentText}>{comment.text}</Text>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          ) : (
+            <View style={styles.placeholderWrap}>
+              <Text style={styles.placeholderTitle}>No market selected</Text>
+              <Text style={styles.placeholderDescription}>Scroll the feed to pick a market.</Text>
+            </View>
+          )}
+        </View>
       </ScrollView>
 
-      <SafeAreaView style={styles.topBar}>
-        <View style={styles.topBarSpacer} />
-        <View style={styles.centerTabs}>
-          <Pressable onPress={() => handleTabPress(0)}>
-            <Text style={activeIndex === 0 ? styles.topTabActive : styles.topTabDim}>My Bets</Text>
+      {!isDetailVisible && (
+        <SafeAreaView style={styles.topBar}>
+          <View style={styles.topBarSpacer} />
+          <View style={styles.centerTabs}>
+            <Pressable onPress={() => handleTabPress(0)}>
+              <Text style={activeIndex === 0 ? styles.topTabActive : styles.topTabDim}>My Bets</Text>
+            </Pressable>
+            <Pressable onPress={() => handleTabPress(1)}>
+              <Text style={activeIndex === 1 ? styles.topTabActive : styles.topTabDim}>Watch List</Text>
+            </Pressable>
+            <Pressable onPress={() => handleTabPress(2)}>
+              <Text style={activeIndex === 2 ? styles.topTabActive : styles.topTabDim}>Markets</Text>
+            </Pressable>
+          </View>
+          <Pressable onPress={() => router.push("/search" as Href)} style={styles.searchBtn}>
+            <Ionicons name="search" size={20} color="#fff" />
           </Pressable>
-          <Pressable onPress={() => handleTabPress(1)}>
-            <Text style={activeIndex === 1 ? styles.topTabActive : styles.topTabDim}>Watch List</Text>
-          </Pressable>
-          <Pressable onPress={() => handleTabPress(2)}>
-            <Text style={activeIndex === 2 ? styles.topTabActive : styles.topTabDim}>Markets</Text>
-          </Pressable>
-        </View>
-        <Pressable onPress={() => router.push("/search" as Href)} style={styles.searchBtn}>
-          <Ionicons name="search" size={20} color="#fff" />
-        </Pressable>
-      </SafeAreaView>
+        </SafeAreaView>
+      )}
     </View>
   );
 }
@@ -321,9 +477,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 80,
     maxWidth: '100%',
     marginRight: 0,
     marginBottom: 0,
@@ -381,11 +534,12 @@ const styles = StyleSheet.create({
   },
   rightRail: {
     position: "absolute",
-    right: 10,
-    top: "50%",
-    transform: [{ translateY: -140 }],
+    right: 18,
+    top: '50%',
+    transform: [{ translateY: -80 }],
     alignItems: "center",
-    gap: 18,
+    justifyContent: 'center',
+    gap: 28,
   },
   marketLogo: { width: 44, height: 44, borderRadius: 10 },
   marketLogoAbsolute: {
@@ -409,7 +563,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000" },
   pager: { flex: 1 },
   pagerContent: { height: "100%" },
-  page: { height: "100%" },
+  page: { height: "100%", backgroundColor: '#000' },
   pageContent: { flex: 1 },
   marketSlide: { width: "100%", height: "100%" },
   carousel: { flex: 1 },
@@ -484,7 +638,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 20,
     right: 20,
-    bottom: 48,
+    bottom: 90,
     gap: 12,
     alignItems: 'flex-start',
   },
@@ -495,6 +649,8 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     marginBottom: 4,
     alignSelf: 'flex-start',
+    maxWidth: '70%',
+    paddingRight: 12,
   },
   yesNoRowDynamic: {
     flexDirection: "row",
@@ -568,4 +724,155 @@ const styles = StyleSheet.create({
   placeholderWrap: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
   placeholderTitle: { color: "#fff", fontSize: 28, fontWeight: "800" },
   placeholderDescription: { color: "#aaa", fontSize: 16, textAlign: "center", paddingHorizontal: 32 },
+  
+  // Market detail styles
+  detailScrollView: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  detailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 12,
+  },
+  detailMarketLogo: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+  },
+  detailMarketName: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  detailHeadline: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '800',
+    lineHeight: 26,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+  },
+  detailChartContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  detailChartLegend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 12,
+  },
+  detailLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  detailLegendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  detailLegendText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  detailChart: {
+    backgroundColor: '#111',
+    borderRadius: 12,
+    padding: 20,
+    minHeight: 180,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  detailChartPlaceholder: {
+    fontSize: 48,
+    marginBottom: 8,
+  },
+  detailChartSubtext: {
+    color: '#888',
+    fontSize: 14,
+  },
+  detailOptionsSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  detailSectionTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 12,
+  },
+  detailOptionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    flexWrap: 'wrap',
+  },
+  detailOptionBtn: {
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 100,
+  },
+  detailOptionLabel: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  detailOptionPrice: {
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  detailCommentsSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  detailCommentCard: {
+    backgroundColor: '#111',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  detailCommentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 10,
+  },
+  detailCommentAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#333',
+  },
+  detailCommentMeta: {
+    flex: 1,
+  },
+  detailCommentAuthor: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  detailCommentTime: {
+    color: '#888',
+    fontSize: 12,
+  },
+  detailCommentText: {
+    color: '#ddd',
+    fontSize: 14,
+    lineHeight: 20,
+  },
 });

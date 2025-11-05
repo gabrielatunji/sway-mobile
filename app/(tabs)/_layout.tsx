@@ -22,9 +22,9 @@ export default function TabsLayout() {
         title: "Friends",
         tabBarIcon: ({ color, size }) => <Ionicons name="people" color={color} size={size} />,
       }} />
-      <Tabs.Screen name="profile" options={{
-        title: "Profile",
-        tabBarIcon: ({ color, size }) => <Ionicons name="person" color={color} size={size} />,
+      <Tabs.Screen name="wallet" options={{
+        title: "Wallet",
+        tabBarIcon: ({ color, size }) => <Ionicons name="wallet" color={color} size={size} />,
       }} />
     </Tabs>
   );

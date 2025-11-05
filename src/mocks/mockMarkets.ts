@@ -57,8 +57,8 @@ export const mockMarkets: MockMarket[] = [
     headline: 'Will Ethereum switch to Proof of Stake by 2027?',
     source: 'kalshi',
     options: [
-      { label: 'Yes, by 2027', value: 60.5 },
-      { label: 'No, not by 2027', value: 39.5 },
+      { label: 'Yes', value: 60.5 },
+      { label: 'No', value: 39.5 },
     ],
     image: require('./mockAssets/mock2.jpg'),
   },
