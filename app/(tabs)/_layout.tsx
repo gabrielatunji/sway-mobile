@@ -34,7 +34,8 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: '#000000',
     borderRadius: 0,
-    borderTopWidth: 0,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.12)',
     height: 64,
     paddingBottom: 10,
   },

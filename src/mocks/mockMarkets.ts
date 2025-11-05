@@ -1,29 +1,67 @@
 // mockMarkets.ts
-// Drop images here and define mock market data for swipeable feed testing
 
-export const mockMarkets = [
+// Type for a market option
+export type MarketOption = {
+  label: string;
+  value: number;
+};
+
+// Type for a market
+export type MockMarket = {
+  id: string;
+  headline: string;
+  source: 'polymarket' | 'kalshi' | 'manifold';
+  prices?: { yes: number; no: number };
+  options?: MarketOption[];
+  image: any;
+};
+
+export const mockMarkets: MockMarket[] = [
   {
     id: '1',
     headline: 'Will Bitcoin hit $100k by 2026?',
     source: 'polymarket',
     prices: { yes: 45.2, no: 54.8 },
-    image: require('./mockAssets/mock1.jpg'), // Drop your image in assets/images and update the filename
+    image: require('./mockAssets/mock1.jpg'),
   },
   {
     id: '2',
     headline: 'Will AI pass the Turing Test by 2030?',
     source: 'kalshi',
     prices: { yes: 12.3, no: 87.7 },
-    image: require('./mockAssets/mock2.jpg'), // Drop your image in assets/images and update the filename
+    image: require('./mockAssets/mock2.jpg'),
   },
   {
     id: '3',
     headline: 'Will SpaceX land humans on Mars by 2035?',
     source: 'manifold',
     prices: { yes: 33.3, no: 66.7 },
-    image: require('./mockAssets/mock3.jpg'), // Drop your image in assets/images and update the filename
+    image: require('./mockAssets/mock3.jpg'),
   },
-  // Add more mock markets as needed
+  // Dynamic options test
+  {
+    id: '4',
+    headline: 'Who will win the 2028 US Presidential Election?',
+    source: 'manifold',
+    options: [
+      { label: 'Andrew Cuomo', value: 40.1 },
+      { label: 'Zohra Madmani', value: 35.7 },
+      { label: 'Casey Sulia', value: 24.2 },
+      { label: 'June Canola', value: 10.5 },
+      { label: 'April Blue', value: 8.3 },
+    ],
+    image: require('./mockAssets/mock1.jpg'),
+  },
+  {
+    id: '5',
+    headline: 'Will Ethereum switch to Proof of Stake by 2027?',
+    source: 'kalshi',
+    options: [
+      { label: 'Yes, by 2027', value: 60.5 },
+      { label: 'No, not by 2027', value: 39.5 },
+    ],
+    image: require('./mockAssets/mock2.jpg'),
+  },
 ];
 
 // Usage:

@@ -1,3 +1,4 @@
+
 import { useRef, useState, useEffect } from "react";
 // MOCK DATA: Replace with real API integration when ready
 import { mockMarkets } from '../../src/mocks/mockMarkets';
@@ -101,17 +102,44 @@ export default function HomeScreen() {
             decelerationRate="fast"
             renderItem={({ item }) => {
               const marketLogoUri = MARKET_LOGOS[item.source];
-              const marketSourceLabel = MARKET_LABELS[item.source] ?? "Market";
+              // Support both old and new mockMarkets format
+              // If item.options exists, use it; else fallback to Yes/No
+              const options = item.options || [
+                { label: 'Yes', value: item.prices?.yes },
+                { label: 'No', value: item.prices?.no },
+              ];
+              // Dynamic color assignment for options
+              let optionColors: string[] = [];
+              if (options.length === 2) {
+                optionColors = [styles.yesBoxDynamic.backgroundColor, styles.noBoxDynamic.backgroundColor];
+              } else if (options.length > 2) {
+                // Sort options by value descending, but keep original order for rendering
+                const sorted = [...options].sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
+                const max = sorted[0]?.value ?? 1;
+                const min = sorted[sorted.length - 1]?.value ?? 0;
+                // Color stops: green (#22c55e) to red (#dc2626)
+                // We'll interpolate between green and red for intermediate options
+                const getColor = (rank: number, total: number) => {
+                  if (rank === 0) return '#22c55e'; // highest: green
+                  if (rank === total - 1) return '#dc2626'; // lowest: red
+                  // interpolate between green and red
+                  // green: 34,197,94; red: 220,38,38
+                  const t = rank / (total - 1);
+                  const r = Math.round(34 + (220 - 34) * t);
+                  const g = Math.round(197 + (38 - 197) * t);
+                  const b = Math.round(94 + (38 - 94) * t);
+                  return `rgb(${r},${g},${b})`;
+                };
+                // Map original options to their color by rank in sorted array
+                optionColors = options.map(opt => {
+                  const rank = sorted.findIndex(o => o.label === opt.label && o.value === opt.value);
+                  return getColor(rank, options.length);
+                });
+              }
               return (
                 <View style={{ width, height }}> 
                   <Image source={item.image} style={styles.picturePlaceholder} resizeMode="cover" />
                   <View style={styles.rightRail}>
-                    <Pressable onPress={() => router.push("/user" as Href)} style={styles.avatarWrap}>
-                      <View style={styles.avatar} />
-                      <View style={styles.plusBadge}>
-                        <Text style={styles.plus}>＋</Text>
-                      </View>
-                    </Pressable>
                     <Pressable onPress={() => handlePlaceholder("like clip")} style={styles.railBtn}>
                       <Ionicons name="heart" size={28} color="#fff" />
                       <Text style={styles.railCount}>22.3K</Text>
@@ -124,25 +152,65 @@ export default function HomeScreen() {
                       <Ionicons name="share-social" size={26} color="#fff" />
                       <Text style={styles.railCount}>551</Text>
                     </Pressable>
-                    <Pressable onPress={() => handlePlaceholder("bookmark clip")} style={styles.railBtn}>
-                      <Ionicons name="bookmark" size={24} color="#fff" />
-                      <Text style={styles.railCount}>797</Text>
+                    <Pressable onPress={() => handlePlaceholder("reminder clip")} style={styles.railBtn}>
+                      <Ionicons name="time" size={24} color="#fff" />
                     </Pressable>
                   </View>
                   <Image source={marketLogoUri} style={[styles.marketLogo, styles.marketLogoAbsolute]} />
-                  <View style={styles.bottomArea}>
-                    <Text style={styles.headlineText}>{item.headline}</Text>
-                    <View style={styles.yesNoRow}>
-                      <View style={styles.yesBox}>
-                        <Text style={styles.yesText}>
-                          Yes <Text style={styles.priceText}>{formatPrice(item.prices.yes)}</Text>
-                        </Text>
-                      </View>
-                      <View style={styles.noBox}>
-                        <Text style={styles.noText}>
-                          No <Text style={styles.priceText}>{formatPrice(item.prices.no)}</Text>
-                        </Text>
-                      </View>
+                  <View style={styles.bottomAreaDynamic}>
+                    <Text style={styles.headlineTextDynamic}>{item.headline}</Text>
+                    <View
+                      style={[
+                        options.length === 2 ? styles.yesNoRow : styles.yesNoRow2Plus,
+                      ]}
+                    >
+                      {options.map((opt, idx) => {
+                        if (options.length === 2) {
+                          // Yes/No: use yesBox/noBox, yesNoRow
+                          return (
+                            <View
+                              key={idx}
+                              style={[
+                                idx === 0 ? styles.yesBox : styles.noBox,
+                                { flex: 1, marginHorizontal: 6, minWidth: 0, maxWidth: '60%' },
+                              ]}
+                            >
+                              <Text style={styles.optionText} numberOfLines={2} ellipsizeMode="tail">
+                                {opt.label} <Text style={styles.priceText}>{opt.value !== undefined ? formatPrice(opt.value) : ''}</Text>
+                              </Text>
+                            </View>
+                          );
+                        } else {
+                          // Multi-option: wrap each word of label, value center-aligned beside label
+                          const words = opt.label.split(' ');
+                          // If more than 4 options, use same box size for all (2 per row)
+                          const manyOptions = options.length > 4;
+                          return (
+                            <View
+                              key={idx}
+                              style={[
+                                manyOptions
+                                  ? [styles.optionBox2PlusWide, { backgroundColor: optionColors[idx] }]
+                                  : idx === 0
+                                  ? styles.yesBox2Plus
+                                  : idx === 1 && options.length === 2
+                                  ? styles.noBox2Plus
+                                  : [styles.optionBox2Plus, { backgroundColor: optionColors[idx] }],
+                                { marginRight: 12, marginBottom: 12 },
+                              ]}
+                            >
+                              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                                <View style={{ alignItems: 'flex-start', justifyContent: 'center' }}>
+                                  {words.map((word, i) => (
+                                    <Text key={i} style={styles.optionLabel2Plus}>{word}</Text>
+                                  ))}
+                                </View>
+                                <Text style={[styles.priceText2Plus, { marginLeft: 8, alignSelf: 'center' }]}>{opt.value !== undefined ? formatPrice(opt.value) : ''}</Text>
+                              </View>
+                            </View>
+                          );
+                        }
+                      })}
                     </View>
                   </View>
                 </View>
@@ -174,6 +242,149 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  yesNoRow: {
+    flexDirection: "row",
+    justifyContent: 'space-between',
+    flexWrap: 'nowrap',
+    marginTop: 0,
+    marginBottom: 0,
+    width: '100%',
+    alignItems: 'flex-start',
+  },
+  yesNoRow2Plus: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 0,
+    marginTop: 0,
+    marginBottom: 0,
+    width: '100%',
+    alignItems: 'flex-start',
+  },
+  yesBox: {
+    backgroundColor: "#22c55e",
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 0,
+    maxWidth: '60%',
+    flexShrink: 1,
+  },
+  noBox: {
+    backgroundColor: "#dc2626",
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 0,
+    maxWidth: '60%',
+    flexShrink: 1,
+  },
+  yesBox2Plus: {
+    backgroundColor: "#22c55e",
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 80,
+    maxWidth: '100%',
+    marginRight: 12,
+    marginBottom: 0,
+    flexShrink: 1,
+  },
+  noBox2Plus: {
+    backgroundColor: "#dc2626",
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 80,
+    maxWidth: '100%',
+    marginRight: 0,
+    marginBottom: 0,
+    flexShrink: 1,
+  },
+  optionBox2Plus: {
+    backgroundColor: '#222',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 120,
+    maxWidth: '48%',
+    flexShrink: 1,
+  },
+  optionBox2PlusWide: {
+    backgroundColor: '#222',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 140,
+    maxWidth: '48%',
+    flexShrink: 1,
+  },
+  optionText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 24,
+    textAlign: 'center',
+    flexShrink: 1,
+  },
+  priceText: {
+    color: 'rgba(255,255,255,0.85)',
+    fontWeight: '600',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 0,
+  },
+  optionLabel2Plus: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 18,
+    textAlign: 'left',
+    alignSelf: 'flex-start',
+    flexShrink: 1,
+  },
+  priceText2Plus: {
+    fontWeight: "600",
+    fontSize: 18,
+    color: "#ffffffff",
+    textAlign: 'center',
+  },
+  rightRail: {
+    position: "absolute",
+    right: 10,
+    top: "50%",
+    transform: [{ translateY: -140 }],
+    alignItems: "center",
+    gap: 18,
+  },
+  marketLogo: { width: 44, height: 44, borderRadius: 10 },
+  marketLogoAbsolute: {
+    position: 'absolute',
+    top: 110,
+    left: 20,
+    zIndex: 20,
+  },
+  topBarSpacer: { width: 40 },
+  centerTabs: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 36,
+    paddingHorizontal: 16,
+    flex: 1,
+    justifyContent: "center",
+  },
+  topTabDim: { color: "#bbb", fontWeight: "600" },
+  topTabActive: { color: "#fff", fontWeight: "800" },
+  searchBtn: { padding: 8 },
   container: { flex: 1, backgroundColor: "#000" },
   pager: { flex: 1 },
   pagerContent: { height: "100%" },
@@ -206,104 +417,131 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     zIndex: 10,
   },
-  topBarSpacer: { width: 40 },
-  topTabDim: { color: "#bbb", fontWeight: "600" },
-  topTabActive: { color: "#fff", fontWeight: "800" },
-  searchBtn: { padding: 8 },
-  centerTabs: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 36,
-    paddingHorizontal: 16,
-    flex: 1,
-    justifyContent: "center",
-  },
 
-  captionWrap: {
-    position: "absolute",
-    top: 110,
-    left: 20,
-    right: 120,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  captionHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
-  marketLogo: { width: 44, height: 44, borderRadius: 10 },
-  marketLogoAbsolute: {
-    position: 'absolute',
-    top: 110,
-    left: 20,
-    zIndex: 20,
-  },
-  marketSource: { color: "#fff", fontWeight: "700", fontSize: 18 },
-
-  rightRail: {
-    position: "absolute",
-    right: 10,
-    top: "50%",
-    transform: [{ translateY: -140 }],
-    alignItems: "center",
-    gap: 18,
-  },
-  avatarWrap: { alignItems: "center" },
-  avatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: "#999" },
-  plusBadge: {
-    position: "absolute",
-    bottom: -4,
-    alignSelf: "center",
-    backgroundColor: "#1da1f2",
-    paddingHorizontal: 6,
-    paddingVertical: 0,
-    borderRadius: 10,
-  },
-  plus: { color: "#fff", fontSize: 16, fontWeight: "900", lineHeight: 18 },
-  railBtn: { alignItems: "center" },
-  railCount: { color: "#fff", marginTop: 4, fontSize: 12, fontWeight: "600" },
-
-  bottomArea: { position: "absolute", left: 20, right: 20, bottom: 48, gap: 20 },
-  headlineText: { color: "#fff", fontWeight: "800", fontSize: 28, lineHeight: 34 },
-
-  yesNoRow: {
-    flexDirection: "row",
-    gap: 20,
-    marginTop: 24,
-    marginBottom: 12,
-    justifyContent: "space-between",
-  },
-  yesBox: {
+  // Auto-resizing yes/no for 2 options
+  yesBoxAuto: {
     backgroundColor: "#22c55e",
     borderRadius: 16,
     paddingVertical: 18,
-    paddingHorizontal: 28,
+    paddingHorizontal: 18,
     alignItems: "center",
     justifyContent: "center",
-    flex: 1,
+    minWidth: 0,
+    maxWidth: '100%',
+    flexShrink: 1,
   },
-  noBox: {
+  noBoxAuto: {
     backgroundColor: "#dc2626",
     borderRadius: 16,
     paddingVertical: 18,
-    paddingHorizontal: 28,
+    paddingHorizontal: 18,
     alignItems: "center",
     justifyContent: "center",
-    flex: 1,
+    minWidth: 0,
+    maxWidth: '100%',
+    flexShrink: 1,
   },
-  yesText: {
+  optionTextAuto: {
+    color: '#fff',
+    fontWeight: '900',
+    fontSize: 24,
+    textAlign: 'center',
+    flexShrink: 1,
+  },
+  priceTextAuto: {
+    color: 'rgba(255,255,255,0.85)',
+    fontWeight: '600',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 0,
+  },
+  railBtn: { alignItems: "center" },
+  railCount: { color: "#fff", marginTop: 4, fontSize: 12, fontWeight: "600" },
+
+  // Dynamic bottom area for headline and options
+  bottomAreaDynamic: {
+    position: "absolute",
+    left: 20,
+    right: 20,
+    bottom: 48,
+    gap: 12,
+    alignItems: 'flex-start',
+  },
+  headlineTextDynamic: {
     color: "#fff",
     fontWeight: "800",
-    fontSize: 22,
+    fontSize: 24,
+    lineHeight: 30,
+    marginBottom: 4,
+    alignSelf: 'flex-start',
   },
-  noText: {
-    color: "#fff",
-    fontWeight: "800",
-    fontSize: 22,
+  yesNoRowDynamic: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 0,
+    marginTop: 0,
+    marginBottom: 0,
+    width: '100%',
+    alignItems: 'flex-start',
   },
-  priceText: {
+  yesBoxDynamic: {
+    backgroundColor: "#22c55e",
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 80,
+    maxWidth: '100%',
+    marginRight: 12,
+    marginBottom: 0,
+    flexShrink: 1,
+  },
+  noBoxDynamic: {
+    backgroundColor: "#dc2626",
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 80,
+    maxWidth: '100%',
+    marginRight: 0,
+    marginBottom: 0,
+    flexShrink: 1,
+  },
+  optionBoxDynamic: {
+    backgroundColor: '#222',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 80,
+    maxWidth: '100%',
+    flexShrink: 1,
+  },
+  optionTextDynamic: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 18,
+    textAlign: 'center',
+    flexShrink: 1,
+  },
+  // Removed duplicate priceText style
+  optionLabelDynamic: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 18,
+    textAlign: 'left',
+    alignSelf: 'flex-start',
+    flexShrink: 1,
+  },
+  priceTextDynamic: {
     fontWeight: "600",
     fontSize: 18,
-    color: "rgba(255,255,255,0.9)",
+    color: "#ffffffff",
+    textAlign: 'center',
   },
 
   placeholderWrap: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
